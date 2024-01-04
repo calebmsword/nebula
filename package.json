@@ -1,0 +1,29 @@
+{
+  "name": "nebula",
+  "type": "module",
+  "types": "public-types.d.ts",
+  "version": "0.0.0",
+  "description": "A collection of useful requestor factories.",
+  "main": "index.js",
+  "scripts": {
+    "test": "node --test",
+    "test-coverage": "node --test --experimental-test-coverage"
+  },
+  "keywords": [
+    "async",
+    "asynchronous",
+    "parsec",
+    "parseq",
+    "functional",
+    "factory",
+    "factories",
+    "requestor",
+    "requestors",
+    "ajax"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}
