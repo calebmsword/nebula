@@ -31,7 +31,6 @@ export function map(mapper) {
     return function mapRequestor(receiver, message) {
         getSafetyWrapper(receiver).doEffect(() => {
             const mapped = mapper(message);
-            console.log(mapped)
             if (mapped === undefined) throw new Error(
                 "map requestor returned undefined");
             return mapped;
