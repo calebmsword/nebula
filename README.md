@@ -1,4 +1,4 @@
-# Parsec
+# Nebula
 Nebula is a collection of requestor factories, as well as a few utilities to aid the creation of requestors. When used with Parsec, it becomes the most ergonomic way to use requestors to manage asychronous code in JavaScript.
 
 This package is compatible with TypeScript. Types and documentation are provided for all public functions in this package.
