@@ -1,5 +1,6 @@
 {
-  "name": "nebula",
+  "name": "cms-nebula",
+  "repository": "https://github.com/calebmsword/nebula",
   "type": "module",
   "types": "public-types.d.ts",
   "version": "0.0.0",
@@ -24,6 +25,10 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@types/node": "^20.10.7",
     "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "cms-parsec": "^0.0.1"
   }
 }
