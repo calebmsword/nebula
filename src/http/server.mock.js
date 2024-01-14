@@ -40,10 +40,15 @@ const get = (hostname, port, id) => {
  */
 const save = (hostname, port, json) => {
     try {
-        if (typeof json.id !== "number") return;
-        json.id = getId();
-        store[hostname][port][json.id] = json;
-        return json;
+        if (typeof json === "object" &&
+            !Array.isArray(json) &&
+            typeof json.id === "number"
+        ) {
+            json.id = getId();
+            store[hostname][port][json.id] = json;
+            return json;
+        }
+
     }
     catch(error) {
         return;
