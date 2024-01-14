@@ -49,12 +49,13 @@ export function getSafetyWrapper(receiver) {
     let wrapper;
 
     /**
-     * @param {import("../../public-types").Effect<any>} effect 
-     * @param {import("../../public-types").OnError|undefined} onError 
+     * @param {import("../../public-types").Effect<any>} effect
+     * @param {import("../../public-types").OnError|undefined} [onError] 
+     * @param {any[]} args
      */
-    function doEffect(effect, onError) {
+    function doEffect(effect, onError, ...args) {
         try {
-            const value = effect(wrapper);
+            const value = effect(wrapper, ...args);
             if (value !== undefined) tryReceiver({ value });
         }
         catch(error) {
@@ -67,12 +68,17 @@ export function getSafetyWrapper(receiver) {
 
     /**
      * @param {import("../../public-types").Effect<any>} effect 
-     * @param {import("../../public-types").OnError|undefined} onError 
+     * @param {import("../../public-types").OnError|any[]} [argsOrOnError]
+     * @param {import("../../public-types").OnError} [onError] 
      * @returns {() => void}
      */
-    function getEffect(effect, onError) {
-        return () => {
-            doEffect(effect, onError);
+    function getEffect(effect, argsOrOnError, onError) {
+
+        if (typeof argsOrOnError === "function")
+            onError = argsOrOnError;
+
+        return (...args) => {
+            doEffect(effect, onError, ...args);
         };
     }
 

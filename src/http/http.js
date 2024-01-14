@@ -135,7 +135,7 @@ export function getStatusMessage(statusCode) {
  * 
  * @example
  * ```
- * const doPostRequest = createAjaxRequestor({
+ * const doPostRequest = httpRequestor({
  *   url: "endpoint/of/request",
  *   method: "POST",  // or "GET", "PUT", etc...
  *   headers: {
@@ -183,7 +183,7 @@ export function getStatusMessage(statusCode) {
  * 
  * @example
  * ```
- * const getExpensiveRequest = createAjaxRequestor({
+ * const getExpensiveRequest = httpRequestor({
  *     url: "endpoint/of/request",
  *     
  *     // customCancel must be a function factory
@@ -286,7 +286,6 @@ export function getStatusMessage(statusCode) {
  * `statusMessage`, `headers`, and `data`.
  */
 export function httpRequestor(spec) {
-
     if (typeof spec !== "object")
         spec = {}
 
@@ -345,7 +344,6 @@ export function httpRequestor(spec) {
         const wrapper = getSafetyWrapper(receiver)
         
         wrapper.doEffect(wrapper => {
-
             if (typeof message !== "object") message = {};
 
             // requestor can override body, contentType, or customCancel
@@ -432,7 +430,7 @@ export function httpRequestor(spec) {
             });
             
             const request = new XMLHttpRequest();
-            
+
             request.onreadystatechange = wrapper.getEffect(() => {
                 if (request.readyState !== XMLHttpRequest.DONE) return;
 
@@ -546,15 +544,13 @@ export function createSpecificMethodRequestor(method) {
 }
 
 /**
- * Creates an ajax requestor for making GET requests.
+ * Creates a  requestor for making GET requests.
  * @param {import("../../public-types").SpecificHttpSpec|string} url 
- * If a string, then the endpoint of the GET request. 
- * If you pass a `spec` object as the first argument, then the second parameter 
- * is ignored.
+ * If a string, then the endpoint of the GET request. If you pass a `spec` 
+ * object as the first argument, then the second parameter is ignored.
  * @param {import("../../public-types").SpecificHttpSpec} spec 
- * See the documentation for the `spec` parameter in 
- * {@link httpRequestor}.. If you provide a method property in this spec, it is 
- * ignored.
+ * See the documentation for the `spec` parameter in {@link httpRequestor}. If 
+ * you provide a method property in this spec, it is ignored.
  * @returns {import("../../public-types").HttpRequestor} 
  * A requestor. See documentation for the return value of 
  * {@link httpRequestor}.
@@ -562,7 +558,7 @@ export function createSpecificMethodRequestor(method) {
 export const httpRequestorGet = createSpecificMethodRequestor("GET");
 
 /**
- * Creates an ajax requestor for making POST requests.
+ * Creates a requestor for making POST requests.
  * @param {import("../../public-types").SpecificHttpSpec|string} url 
  * If a string, then the endpoint of the GET request. 
  * If you pass a `spec` object as the first argument, then the second parameter 
@@ -578,7 +574,7 @@ export const httpRequestorGet = createSpecificMethodRequestor("GET");
 export const httpRequestorPost = createSpecificMethodRequestor("POST");
 
 /**
- * Creates an ajax requestor for making PUT requests.
+ * Creates a requestor for making PUT requests.
  * @param {import("../../public-types").SpecificHttpSpec|string} url 
  * If a string, then the endpoint of the GET request. 
  * If you pass a `spec` object as the first argument, then the second parameter 
@@ -594,7 +590,7 @@ export const httpRequestorPost = createSpecificMethodRequestor("POST");
 export const httpRequestorPut = createSpecificMethodRequestor("PUT");
 
 /**
- * Creates an ajax requestor for making DELETE requests.
+ * Creates a requestor for making DELETE requests.
  * @param {import("../../public-types").SpecificHttpSpec|string} url 
  * If a string, then the endpoint of the GET request. 
  * If you pass a `spec` object as the first argument, then the second parameter 

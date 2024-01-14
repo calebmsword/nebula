@@ -1,8 +1,7 @@
 /**
  * How the result of a requestor's unit of work is represented.
  * @Template T
- * The type of the `value` property will have if the Result is successful. If 
- * no type is provided, then `T` will be `any`.
+ * The type of the `value` property in the Result.
  */
 export interface Result<T> {
     value?: T,
@@ -36,15 +35,14 @@ export type Cancellor = (reason?: any) => void;
 /**
  * A callback that is executed when a requestor completes its work.
  * @template T
- * The type of the `value` property of the result if the requestor is 
- * successful.
+ * The type of the `value` property of the Result passed to the receiver.
  * @param {Success|Failure} result
  * The result of the requestor's work.
  */
 export type Receiver<T> = (result: Result<T>) => void;
 
 /**
- * Requestors are the building blocks of asynchronous logic in Parsec.
+ * The building blocks of asynchronous logic in Parsec.
  * Requestors are functions which perform "one unit of work". This work is 
  * typically asynchronous, but it can be synchronous. Upon completion, the 
  * requestor should call its {@link Receiver} with a {@link Success} or 
@@ -80,9 +78,11 @@ export type JsonPrimitives = boolean|number|string|undefined|null;
 /**
  * Represents an object which can be serialized into JSON.
  */
-export interface Json {
-    [key: string|number]: JsonPrimitives|JsonPrimitives[]|Json
+export interface JsonObject {
+    [key: string|number]: JsonPrimitives|JsonPrimitives[]|JsonObject
 }
+
+export type Json = JsonObject|JsonObject[];
 
 /**
  * The factory function which can be passed to `http`.
@@ -266,15 +266,15 @@ export interface OutgoingHttpHeaders {
  * `httpPost`, `httpPut`, and `httpDelete`.
  */
 export interface SpecificHttpSpec {
-    url: string,
-    params: { [key: string]: string },
-    headers: OutgoingHttpHeaders,
-    body: Json|string,
-    contentType: ContentType,
-    customCancel: CustomCancellorFactory,
-    autoParseRequest: boolean,
-    autoParseResponse: boolean,
-    log: Log
+    url?: string,
+    params?: { [key: string]: string },
+    headers?: OutgoingHttpHeaders,
+    body?: Json|string,
+    contentType?: ContentType,
+    customCancel?: CustomCancellorFactory,
+    autoParseRequest?: boolean,
+    autoParseResponse?: boolean,
+    log?: Log
 }
 
 /**
@@ -315,8 +315,8 @@ export interface HttpMessage {
 
 /**
  * A successful {@link Result} from
- * `http`/`httpGet`/`httpPost`/`httpPut`/`httpDelete` will have a `value` of 
- * the following type.
+ * `http`/`httpGet`/`httpPost`/`httpPut`/`httpDelete` will have a `value` of the 
+ * following type.
  * @template T
  * The type of the `data` property. It must be JSON serializable.
  */
@@ -327,8 +327,14 @@ export interface HttpResultValue<T extends Json = Json> {
     statusMessage?: string
 }
 
-export type HttpRequestor<T extends Json = Json> = 
-    Requestor<HttpResultValue<T>|undefined, HttpMessage>;
+/**
+ * @template [T = Json] 
+ * The type of the successful Result value. It must extend the Json interface. 
+ * @template [M = HttpMessage] 
+ * The type of message that the requestor can receive.
+ */
+export type HttpRequestor<T extends Json = Json, M = HttpMessage> = 
+    Requestor<HttpResultValue<T>|undefined, M>;
 
 /**
  * The optional error callback which can be passed to effect callbacks in safety
@@ -353,7 +359,8 @@ export type OnError = (error: unknown, tryReceiver: Receiver<any>) => void;
  * the receiver using `tryReceiver`.
  */
 export type Effect<T> = (
-    safetyWrapper: SafetyWrapper<T>
+    safetyWrapper: SafetyWrapper<T>,
+    ...args: any[]
 ) => void;
 
 /**
@@ -457,62 +464,6 @@ export interface SafetyWrapper<T> {
 }
 
 export type GetSafetyWrapper<T> = (receiver: Receiver<T>) => SafetyWrapper<T>;
-
-export type MapRequestor<M, T> = Requestor<T, M>;
-
-export type MapRequestorFactory<M, T> = 
-    (mapper: (message?: M) => T) => MapRequestor<M, T>;
-
-/**
- * @template M
- * The type of the message the requestor will receive.
- * @template T
- * The success value of the requestor for the `true` branch.
- * @template F
- * The success value of the requestor for the `false` branch.
- */
-export type BranchRequestorFactory<M, T, F> = (
-    condition: (message?: M) => boolean,
-    ifTrue: Requestor<T, M>,
-    ifFalse: Requestor<F, M>
-) => Requestor<T|F, M>;
-
-/**
- * @template M
- * The type of the message which is passed through.
- */
-export type ThruRequestorFactory<M> = (
-    sideEffect?: ((message: M) => void)
-) => Requestor<M, M>
-
-/**
- * @template M
- * The type of the message which is passed through.
- * @template T
- * The type of the evidence property attached to the failure reason. If not 
- * provided, the type is `never`.
- */
-export type FailRequestorFactory<M, T = never> = (
-    excuse?: string | ((message: M) => string),
-    createEvidence?: (message: M) => T
-) => Requestor<undefined, M>
-
-
-export interface PromiseRequestorFactorySpec {
-    cancellable?: boolean,
-    customCancel?: (
-        (reject: (reason?: any) => void) => (reason?: any) => void
-    )
-}
-
-/**
- * @template T
- * The type of the value that the promise will resolve with.
- */
-export type PromiseRequestorFactory<T> = (
-    promise: Promise<T>,
-    spec?: PromiseRequestorFactorySpec
-) => Requestor<T>;
 
 export type HttpRequestorMessagableFactory = (
     url: string,
@@ -637,16 +588,16 @@ declare module "cms-nebula" {
  * query parameters, and a hash.
  * @param {{ [key: string]: string }} [spec.params] 
  * Represents query parameter keys and their values.  
- * @param {import("../../public-types").HttpMethod} [spec.method] 
+ * @param {HttpMethod} [spec.method] 
  * "GET", "POST", "PUT", "DELETE", etc. If none is provided, then defaults to 
  * "GET".
- * @param {import("../../public-types").OutgoingHttpHeaders} [spec.headers]
+ * @param {OutgoingHttpHeaders} [spec.headers]
  * The provided object should map header keys to their values.
- * @param {import("../../public-types").Json|string} [spec.body] 
+ * @param {Json|string} [spec.body] 
  * If an object, then it is parsed into a string based on the provided content 
  * type (either from the header or the `spec.contentType`). If it is a string, 
  * then it is already parsed.
- * @param {import("../../public-types").ContentType} [spec.contentType] 
+ * @param {ContentType} [spec.contentType] 
  * Determines how `value.body` is parsed into a string. If  
  * `"x-www-form-urlencoded"` or `"application/x-www-form-urlencoded"`, 
  * `value.body` is transformed into the format used by URL query parameters. If 
@@ -654,7 +605,7 @@ declare module "cms-nebula" {
  * into a string by JSON.stringify. If no `contentType` is provided, then 
  * `"application/json"` is used by default. Specifying the content-type in the 
  * header overrides this property completely.
- * @param {import("../../public-types").CustomCancellorFactory} [spec.customCancel]
+ * @param {CustomCancellorFactory} [spec.customCancel]
  * A function factory. It takes a method which destroys the request object 
  * represented by the requestor and returns a new function. Use this if you 
  * would like to make a request to the server to tell it to stop processing a 
@@ -666,11 +617,11 @@ declare module "cms-nebula" {
  * @param {boolean} [spec.autoParseResponse]
  * If `false`, responses will be sent to the receiver as strings instead of 
  * objects. The receiver must manually parse the response.
- * @param {import("../../public-types").Log} [spec.log] 
+ * @param {Log} [spec.log] 
  * Any errors will be sent to this function if it is provided. This should be 
  * used for logging purposes. Currently, only errors which occur during 
  * autoparsing with JSON.parse causes this function to be called.
- * @returns {import("../../public-types").HttpRequestor} 
+ * @returns {HttpRequestor} 
  * An HTTP/HTTPS requestor. The returned requestor can take an optional 
  * `message` hash which can further configure the http request. See the 
  * documentation for the {@link HttpMessage}.
@@ -685,15 +636,15 @@ export function http<T extends Json = Json>(spec: HttpSpec) : HttpRequestor<T>;
  * *different* behavior from {@link http} which only fails if an error is thrown 
  * or if `XMLHttpRequest` calls the `onerror` listener.
  *  
- * @param {import("../../public-types").SpecificHttpSpec|string} url 
+ * @param {SpecificHttpSpec|string} url 
  * If a string, then the endpoint of the GET request. 
  * If you pass a `spec` object as the first argument, then the second parameter 
  * is ignored.
- * @param {import("../../public-types").SpecificHttpSpec} [spec] 
+ * @param {SpecificHttpSpec} [spec] 
  * See the documentation for the `spec` parameter in 
  * {@link httpRequestor}. If you provide a method property in this spec, it is 
  * ignored.
- * @returns {import("../../public-types").HttpRequestor} 
+ * @returns {HttpRequestor} 
  * An {@link HttpRequestor}.
  */
 export function httpGet<T extends Json = Json>(
@@ -709,15 +660,15 @@ export function httpGet<T extends Json = Json>(
  * *different* behavior from {@link http} which only fails if an error is thrown 
  * or if `XMLHttpRequest` calls the `onerror` listener.
  * 
- * @param {import("../../public-types").SpecificHttpSpec|string} url 
+ * @param {SpecificHttpSpec|string} url 
  * If a string, then the endpoint of the GET request. 
  * If you pass a `spec` object as the first argument, then the second parameter 
  * is ignored.
- * @param {import("../../public-types").SpecificHttpSpec} [spec] 
+ * @param {SpecificHttpSpec} [spec] 
  * See the documentation for the `spec` parameter in 
  * {@link httpRequestor}. If you provide a method property in this spec, it is 
  * ignored.
- * @returns {import("../../public-types").HttpRequestor} 
+ * @returns {HttpRequestor} 
  * An {@link HttpRequestor}.
  */
 export function httpPost<T extends Json = Json>(
@@ -733,15 +684,15 @@ export function httpPost<T extends Json = Json>(
  * *different* behavior from {@link http} which only fails if an error is thrown 
  * or if `XMLHttpRequest` calls the `onerror` listener.
  * 
- * @param {import("../../public-types").SpecificHttpSpec|string} url 
+ * @param {SpecificHttpSpec|string} url 
  * If a string, then the endpoint of the GET request. 
  * If you pass a `spec` object as the first argument, then the second parameter 
  * is ignored.
- * @param {import("../../public-types").SpecificHttpSpec} [spec] 
+ * @param {SpecificHttpSpec} [spec] 
  * See the documentation for the `spec` parameter in 
  * {@link httpRequestor}. If you provide a method property in this spec, it is 
  * ignored.
- * @returns {import("../../public-types").HttpRequestor} 
+ * @returns {HttpRequestor} 
  * An {@link HttpRequestor}.
  */
 export function httpPut<T extends Json = Json>(
@@ -751,15 +702,15 @@ export function httpPut<T extends Json = Json>(
 
 /**
  * Creates a requestor that makes a DELETE request.
- * @param {import("../../public-types").SpecificHttpSpec|string} url 
+ * @param {SpecificHttpSpec|string} url 
  * If a string, then the endpoint of the GET request. 
  * If you pass a `spec` object as the first argument, then the second parameter 
  * is ignored.
- * @param {import("../../public-types").SpecificHttpSpec} [spec] 
+ * @param {SpecificHttpSpec} [spec] 
  * See the documentation for the `spec` parameter in 
  * {@link httpRequestor}. If you provide a method property in this spec, it is 
  * ignored.
- * @returns {import("../../public-types").HttpRequestor} 
+ * @returns {HttpRequestor} 
  * An {@link HttpRequestor}.
  */
 export function httpDelete<T extends Json = Json>(
@@ -919,7 +870,7 @@ export function fail<M>(
  * Configures the requestor.
  * @param [spec.cancellable]
  * 
- * @param [spec.customCancellor]
+ * @param [spec.customCancel]
  * If provided, must be a function factory which returns a new cancellor. The 
  * function factory receives a function which forces the promise to reject.
  */
@@ -927,7 +878,7 @@ export function usePromise<T, M = any>(
     thenable: Promise<T>, 
     spec: { 
         cancellable?: true,
-        customCancellor?: (reject: (reason?: any) => void) => 
+        customCancel?: (reject: (reason?: any) => void) => 
             (reason?: any) => void;
 }) : Requestor<T, M>;
 
