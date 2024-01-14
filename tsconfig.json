@@ -5,6 +5,7 @@
             "ES2015", 
             "DOM"
         ],
+        "skipLibCheck": true,
         "moduleResolution": "Node",
         "allowSyntheticDefaultImports": true,
         "target": "ES2015",
